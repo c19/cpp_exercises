@@ -11,7 +11,7 @@ Coding:
 
 void openfile(const char *filename, std::ifstream &infile){
     infile.open(filename);
-    if (! infile.good()) {
+    if (! infile.is_open()) {
         std::cout << "Error opening file:" << filename << std::endl;
         exit(1);
     }
@@ -30,6 +30,7 @@ int main (int argc, char const *argv[]) {
         if (line == "that")
             counts++;
     }
+    infile.close();
     std::cout << "found " << counts << " 'that'." << std::endl;
     return 0;
 }
