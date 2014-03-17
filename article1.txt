@@ -1,0 +1,6 @@
+
+<!-- saved from url=(0064)http://sse.tongji.edu.cn/zhaoqinpei/Courses/C++2014/article1.txt -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><style type="text/css"></style></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">A programmer from a very large computer company went to a software conference and then returned to report to his manager, saying: "What sort of programmers work for other companies? They behaved badly and were unconcerned with appearances. Their hair was long and unkempt and their clothes were wrinkled and old. They crashed out hospitality suites and they made rude noises during my presentation." 
+The manager said: "I should have never sent you to the conference. Those programmers live beyond the physical world. They consider life absurd, an accidental coincidence. They come and go without knowing limitations. Without a care, they live only for their programs. Why should they bother with social conventions?" 
+"They are alive within the Tao." 
+</pre></body></html>
