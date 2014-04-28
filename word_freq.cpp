@@ -52,7 +52,6 @@ void parse_line(WORDS_MAP &words, std::string &line){
 			}
 		}
 	}
-
 }
 
 int main(int argc, char const *argv[])
