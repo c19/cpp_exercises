@@ -36,7 +36,7 @@ std::ostream& operator<<(std::ostream& outstream, std::vector<std::string>& str_
 	return outstream;
 }
 
-std::ostream & operator <<( std::ostream &outstream, const class Item &item );
+std::ostream & operator<<(std::ostream&, const class Item&);
 
 /*
   Item()
@@ -55,10 +55,10 @@ public:       // Trust programmer that these won't be set inappropriately
 		 */
 		auto attrs = split(line, ',');     // 编译器会知道这里auto应该是std::vector<std::string>的
 		// std::cout << "parsed args: " << attrs << "\n";
-		if (attrs.size() != 4){
-			throw "UCCU,你看看这嘛玩意:";   // 果断扔出错误，嘲讽用户。
-		}
 		try{
+			if (attrs.size() != 4){
+				throw "UCCU,你看看这嘛玩意:\n";   // 果断扔出错误，嘲讽用户。
+			}
 			long result = std::stoul(attrs[0]);
 			if (result < 0)
 				throw "UCCU! id can't be negative\n";
@@ -71,51 +71,120 @@ public:       // Trust programmer that these won't be set inappropriately
 		}catch(char const* e){
 			std::cerr << e;
 			std::cerr << "data:" << line << std::endl;
+			throw e;
 		}catch (std::exception& e){
 			std::cerr << "ERROR:" << e.what() << std::endl;
 			std::cerr << "data:" << line << std::endl;
-		}       // 使用try catch throw显得更加专业。【应该扩展为外部处理错误。】
+			throw e;   //【继续throw给外部。】【继续throw给外部。】
+		}       // 使用try catch throw显得更加专业。
 		// std::cout << *this;
 	}
 };
-
 std::ostream& operator<<(std::ostream& outstream, const Item& item){
 	outstream << "id:" << item.id << " name:" << item.name << " origin:" << item.origin << " base_price:" << item.base_price << "\n";
 	return outstream;
 }
 
-std::ostream & operator<<(std::ostream&, const class Items&);
-
-typedef std::map<unsigned long, Item*> MAPS;
+std::ostream& operator<<(std::ostream&, const class Items&);
+typedef std::map<unsigned long, Item*> ItemsMAP;
 class Items{
 public:
-	MAPS map;
+	ItemsMAP map;
 	Items(std::string filename){
 		std::ifstream infile(filename);
 		for (std::string line; std::getline(infile, line);)
 		{
-			auto new_item = new Item(line);
-			map[new_item->id] = new_item;
+			try{
+				auto new_item = new Item(line);
+				map[new_item->id] = new_item;
+			}catch(char const* e){
+
+			}catch(std::exception& e){
+
+			} // 捕获错误以免不良数据录入
 		}
-		// std::cout << *this;
 	}
 };
 std::ostream & operator<<( std::ostream &outstream, const Items &items ){
-	for (MAPS::const_iterator iter=items.map.begin(); iter != items.map.end(); ++iter)
+	for (ItemsMAP::const_iterator iter=items.map.begin(); iter != items.map.end(); ++iter)
 	{
 		outstream << *(iter->second);
 	}
 	return outstream;
 }
 
-
+std::ostream& operator<<(std::ostream&, const class Customer&);
 class Customer
 {
 public:
-	Customer();
-	~Customer();
-	
+	unsigned long id;
+	std::string name;
+	std::string gender;
+	std::string phone;   // 以便兼容+86之类的格式。也省的转换
+	int level;
+	unsigned long points;
+	Customer(std::string line){
+		/*  id,姓名、性别、联系电话、会员级别、积分
+			id,王尼玛,男,18888888888,1,89214
+		*/ 
+		auto attrs = split(line, ',');
+		try{
+			if (attrs.size() != 6)
+				throw "bad Customer data:";
+			long result = std::stoul(attrs[0]);
+			if (result < 0)
+				throw "UCCU! id can't be negative\n";
+			id = result;
+			name = attrs[1];
+			gender = attrs[2];
+			phone = attrs[3];
+			level = std::stoi(attrs[4]);
+			points = std::stoul(attrs[5]);
+		}catch(char const* e){
+			std::cerr << e;
+			std::cerr << "data:" << line << std::endl;
+			throw e;
+		}catch(std::exception& e){
+			std::cerr << "ERROR:" << e.what() << std::endl;
+			std::cerr << "data:" << line << std::endl;
+			throw e;
+		}
+		std::cout << *this;
+	}
 };
+std::ostream& operator<<(std::ostream& outstream, const Customer& customer){
+	outstream << "id:" << customer.id << "\tname:" << customer.name << "\tgender:" << customer.gender << "\tphone:" << customer.phone << "\tlevel:" << customer.level << "\tpoints:" << customer.points << "\n";
+	return outstream;
+}
+
+typedef std::map<unsigned long, Customer*> Customers_MAP;
+std::ostream& operator<<(std::ostream&, const class Customers&);
+class Customers
+{
+public:
+	Customers_MAP map;
+	Customers(std::string filename){
+		std::ifstream infile(filename);
+		for (std::string line; std::getline(infile, line);)
+		{
+			try{
+				auto new_customer = new Customer(line);
+				map[new_customer->id] = new_customer;
+			}catch(char const* e){
+
+			}catch(std::exception& e){
+
+			} // 捕获错误以免不良数据录入
+		}
+	}
+};
+std::ostream& operator<<(std::ostream& outstream, const class Customers& customers){
+	for (Customers_MAP::const_iterator iter=customers.map.begin(); iter != customers.map.end(); ++iter)
+	{
+		outstream << *(iter->second);
+	}
+	return outstream;
+}
 
 int main(int argc, char const *argv[])
 {
@@ -123,6 +192,8 @@ int main(int argc, char const *argv[])
 	auto products = Items("db_goods.csv");
 	std::cout << "\n\n";
 	// std::cout << products.map.end()->second;
-	std::cout << products;
+	// std::cout << products;
+	// auto customer = Customer("0,王尼玛,男,18888888888,1,89214");
+	auto customers = Customers("db_users.csv");
 	return 0;
 }
