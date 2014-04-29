@@ -260,7 +260,13 @@ public:
 		/* 购物车与顾客及商品列表绑定 */
 	}
 	Cart& add(Item_ID id, int quantity=1){
-		map[id] += quantity;
+		if (this->items.map.count(id)==0)
+			throw "product does not exist\n";
+		if (map.count(id)>0){
+			map[id] += quantity;
+		}else{
+			map[id] = quantity;
+		}
 		if (map[id] < 1)
 			map.erase(id);
 		return *this;
@@ -277,6 +283,76 @@ std::ostream& operator<<(std::ostream& outstream, const class Cart& cart){
 }
 
 
+Cart& init_cart(Customers& customers, Items& products){
+	bool valid_user = false;
+	std::string token;
+	Customer_ID id;
+	while (not valid_user){
+		std::cout << customers;
+		std::cout << "input a id to choose User:\n";
+		std::cin >> token;
+		try{
+			id = std::stoul(token);
+		}catch(std::exception& e){
+			std::cerr << "id should be a unsigned long" << std::endl;
+			continue;
+		}
+		auto iter = customers.map.find(id);
+		if (iter == customers.map.end()){
+			std::cerr << "id:" << id << "not found\n";
+		}else{
+			auto customer = *iter->second;
+			auto cart = new Cart(customer, products);
+			return *cart;
+		}
+	}
+	throw "init_cart failed.\n";
+}
+
+Cart& input_goods(Cart& cart){
+	std::string token;
+	Item_ID id;
+	int quantity;
+	while (true){
+		std::cout << "======================================\n"
+					 "input goods id and quantity like this:\n"
+					 "240,1\n"
+					 "or just the id:\n"
+					 "240\n"
+					 "type exit or ok to exit\n"
+					 "======================================\n";
+		std::cin >> token;
+		try{
+			if (token == "exit" or token == "ok")
+				break;
+			auto attrs = split(token, ',');
+			if (attrs.size() == 1){
+				id = std::stoul(attrs[0]);
+				quantity = 1;
+			}else{
+				id = std::stoul(attrs[0]);
+				quantity = std::stoi(attrs[1]);
+			}
+			cart.add(id, quantity);
+		}catch(char const* e){
+			std::cerr << e << std::endl;
+		}catch(std::exception& e){
+			std::cerr << "UCCU." << std::endl;
+			continue;
+		}
+	}
+	return cart;
+}
+
+void pay(Cart& cart){
+	while (true){
+		std::cout << "=======================================================================\n"
+					 "0 for pay with cash\t 1 for credit card \t 2 for shopping card\n"
+					 "=======================================================================\n";
+		
+	}
+}
+
 int main(int argc, char const *argv[])
 {
 	// 测试数据改自施闻轩的。
@@ -287,11 +363,13 @@ int main(int argc, char const *argv[])
 	auto cards = Cards("cards.csv");
 	std::cout << cards.map.size() << " cards imported.\n";
 
-	auto customer = *(customers.map.begin()->second);
-	auto cart = Cart(customer, products);
-	cart.add(1, 1);
-	cart.add(240);
-	cart.add(1, -3);
-	std::cout << cart;
+	auto cart = init_cart(customers, products);
+	std::cout << input_goods(cart);
+	pay(cart);
+	std::string token;
+	while (std::cin >> token){
+		std::cout << token;
+	}
 	return 0;
+
 }
