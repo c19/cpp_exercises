@@ -1,10 +1,12 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <algorithm>
 #include <iterator>
 #include <vector>
 #include <exception>
+#include <map>
 // #include "main.h"
 // =========================================
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -73,10 +75,7 @@ public:       // Trust programmer that these won't be set inappropriately
 			std::cerr << "ERROR:" << e.what() << std::endl;
 			std::cerr << "data:" << line << std::endl;
 		}       // 使用try catch throw显得更加专业。【应该扩展为外部处理错误。】
-		std::cout << *this;
-	}
-	~Item(){
-		std::cout << "Item deleted.\n";
+		// std::cout << *this;
 	}
 };
 
@@ -85,7 +84,30 @@ std::ostream& operator<<(std::ostream& outstream, const Item& item){
 	return outstream;
 }
 
-// std::vector<Item>& init_items
+std::ostream & operator<<(std::ostream&, const class Items&);
+
+typedef std::map<unsigned long, Item*> MAPS;
+class Items{
+public:
+	MAPS map;
+	Items(std::string filename){
+		std::ifstream infile(filename);
+		for (std::string line; std::getline(infile, line);)
+		{
+			auto new_item = new Item(line);
+			map[new_item->id] = new_item;
+		}
+		// std::cout << *this;
+	}
+};
+std::ostream & operator<<( std::ostream &outstream, const Items &items ){
+	for (MAPS::const_iterator iter=items.map.begin(); iter != items.map.end(); ++iter)
+	{
+		outstream << *(iter->second);
+	}
+	return outstream;
+}
+
 
 class Customer
 {
@@ -97,7 +119,10 @@ public:
 
 int main(int argc, char const *argv[])
 {
-	auto one = Item("0,大饼卷大葱,山东,998.89");
-	std::cout << one;
+	// auto one = Item("0,大饼卷大葱,山东,998.89");
+	auto products = Items("db_goods.csv");
+	std::cout << "\n\n";
+	// std::cout << products.map.end()->second;
+	std::cout << products;
 	return 0;
 }
