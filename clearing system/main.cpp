@@ -105,7 +105,7 @@ public:
 		}
 	}
 };
-std::ostream & operator<<( std::ostream &outstream, const Items &items ){
+std::ostream& operator<<(std::ostream &outstream, const Items &items){
 	for (ItemsMAP::const_iterator iter=items.map.begin(); iter != items.map.end(); ++iter)
 	{
 		outstream << *(iter->second);
@@ -125,7 +125,7 @@ public:
 	unsigned long points;
 	Customer(std::string line){
 		/*  id,姓名、性别、联系电话、会员级别、积分
-			id,王尼玛,男,18888888888,1,89214
+			0,王尼玛,男,18888888888,1,89214
 		*/ 
 		auto attrs = split(line, ',');
 		try{
@@ -149,7 +149,7 @@ public:
 			std::cerr << "data:" << line << std::endl;
 			throw e;
 		}
-		std::cout << *this;
+		// std::cout << *this;
 	}
 };
 std::ostream& operator<<(std::ostream& outstream, const Customer& customer){
@@ -186,14 +186,78 @@ std::ostream& operator<<(std::ostream& outstream, const class Customers& custome
 	return outstream;
 }
 
+
+std::ostream& operator<<(std::ostream&, const class Card&);
+class Card
+{
+public:
+	std::string id;
+	int balance;
+	Card(std::string line){
+		auto attrs = split(line, ',');
+		try{
+			if (attrs.size() != 2)
+				throw "Bad Card data";
+			id = attrs[0];
+			balance = std::stoi(attrs[1]);
+		}catch(char const* e){
+			std::cerr << e;
+			std::cerr << "data:" << line << std::endl;
+			throw e;
+		}catch(std::exception& e){
+			std::cerr << "ERROR:" << e.what() << std::endl;
+			std::cerr << "data:" << line << std::endl;
+			throw e;
+		}
+	}
+};
+std::ostream& operator<<(std::ostream& outstream, const class Card& card){
+	outstream << "id:" << card.id << "\tbalance:" << card.balance;
+	return outstream;
+}
+
+
+typedef std::map<std::string, Card*> Cards_MAP;
+std::ostream& operator<<(std::ostream&, const class Cards&);
+class Cards
+{
+public:
+	Cards_MAP map;
+	Cards(std::string filename){
+		std::ifstream infile(filename);
+		for (std::string line; std::getline(infile, line);){
+			try{
+				auto new_card = new Card(line);
+				map[new_card->id] = new_card;
+			}catch(char const* e){
+
+			}catch(std::exception& e){
+
+			}
+		}
+	}
+};
+std::ostream& operator<<(std::ostream& outstream, const class Cards& cards){
+	for (Cards_MAP::const_iterator iter = cards.map.begin(); iter != cards.map.end(); ++iter)
+	{
+		outstream << *(iter->second);
+	}
+	return outstream;
+}
+
+// 可以写成模板类和模板函数。。嫌烦。
+
+
 int main(int argc, char const *argv[])
 {
-	// auto one = Item("0,大饼卷大葱,山东,998.89");
-	auto products = Items("db_goods.csv");
-	std::cout << "\n\n";
-	// std::cout << products.map.end()->second;
-	// std::cout << products;
-	// auto customer = Customer("0,王尼玛,男,18888888888,1,89214");
-	auto customers = Customers("db_users.csv");
+	// 测试数据改自施闻轩的。
+	auto products = Items("items.csv");
+	std::cout << products.map.size() << " itmes imported.\n";
+	auto customers = Customers("customers.csv");
+	std::cout << customers.map.size() << " customers imported.\n";
+	auto cards = Cards("cards.csv");
+	std::cout << cards.map.size() << " cards imported.\n";
+
+	
 	return 0;
 }
