@@ -38,13 +38,11 @@ std::ostream& operator<<(std::ostream& outstream, std::vector<std::string>& str_
 
 std::ostream & operator<<(std::ostream&, const class Item&);
 
-/*
-  Item()
-*/
+typedef unsigned long Item_ID;
 class Item
 {
 public:       // Trust programmer that these won't be set inappropriately
-	unsigned long id;
+	Item_ID id;
 	std::string name;
 	std::string origin = "unset";
 	float base_price;
@@ -81,15 +79,16 @@ public:       // Trust programmer that these won't be set inappropriately
 	}
 };
 std::ostream& operator<<(std::ostream& outstream, const Item& item){
-	outstream << "id:" << item.id << " name:" << item.name << " origin:" << item.origin << " base_price:" << item.base_price << "\n";
+	outstream << "id:" << item.id << "\tname:" << item.name << "\torigin:" << item.origin << "\tbase_price:" << item.base_price; // << "\n";
 	return outstream;
 }
 
 std::ostream& operator<<(std::ostream&, const class Items&);
-typedef std::map<unsigned long, Item*> ItemsMAP;
+typedef std::map<unsigned long, Item*> Items_MAP;
 class Items{
 public:
-	ItemsMAP map;
+	Items_MAP map;
+	Items();
 	Items(std::string filename){
 		std::ifstream infile(filename);
 		for (std::string line; std::getline(infile, line);)
@@ -106,23 +105,25 @@ public:
 	}
 };
 std::ostream& operator<<(std::ostream &outstream, const Items &items){
-	for (ItemsMAP::const_iterator iter=items.map.begin(); iter != items.map.end(); ++iter)
+	for (Items_MAP::const_iterator iter=items.map.begin(); iter != items.map.end(); ++iter)
 	{
 		outstream << *(iter->second);
 	}
 	return outstream;
 }
 
+typedef unsigned long Customer_ID;
 std::ostream& operator<<(std::ostream&, const class Customer&);
 class Customer
 {
 public:
-	unsigned long id;
+	Customer_ID id;
 	std::string name;
 	std::string gender;
 	std::string phone;   // 以便兼容+86之类的格式。也省的转换
 	int level;
 	unsigned long points;
+	Customer();
 	Customer(std::string line){
 		/*  id,姓名、性别、联系电话、会员级别、积分
 			0,王尼玛,男,18888888888,1,89214
@@ -247,6 +248,34 @@ std::ostream& operator<<(std::ostream& outstream, const class Cards& cards){
 
 // 可以写成模板类和模板函数。。嫌烦。
 
+typedef std::map<Item_ID, int> Cart_MAP;
+std::ostream& operator<<(std::ostream&, const class Cart&);
+class Cart
+{
+public:
+	const Customer& customer;
+	const Items& items;
+	Cart_MAP map;
+	Cart(Customer& customer, Items& items): customer(customer), items(items){
+		/* 购物车与顾客及商品列表绑定 */
+	}
+	Cart& add(Item_ID id, int quantity=1){
+		map[id] += quantity;
+		if (map[id] < 1)
+			map.erase(id);
+		return *this;
+	}
+};
+std::ostream& operator<<(std::ostream& outstream, const class Cart& cart){
+	outstream << "Items in Cart:\n";
+	for (Cart_MAP::const_iterator iter = cart.map.begin(); iter != cart.map.end(); ++iter)
+	{
+		auto item = cart.items.map.find(iter->first);
+		outstream << *(item->second) << "\tQuantity:" << iter->second << "\n";
+	}
+	return outstream;
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -258,6 +287,11 @@ int main(int argc, char const *argv[])
 	auto cards = Cards("cards.csv");
 	std::cout << cards.map.size() << " cards imported.\n";
 
-	
+	auto customer = *(customers.map.begin()->second);
+	auto cart = Cart(customer, products);
+	cart.add(1, 1);
+	cart.add(240);
+	cart.add(1, -3);
+	std::cout << cart;
 	return 0;
 }
