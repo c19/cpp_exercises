@@ -271,6 +271,15 @@ public:
 			map.erase(id);
 		return *this;
 	}
+	float total() const{
+		float _total = 0;
+		for (Cart_MAP::const_iterator iter = map.begin(); iter != map.end(); ++iter)
+		{
+			auto item = *items.map.find(iter->first)->second;
+			_total += item.base_price*iter->second;
+		}
+		return _total;
+	}
 };
 std::ostream& operator<<(std::ostream& outstream, const class Cart& cart){
 	outstream << "Items in Cart:\n";
@@ -279,6 +288,7 @@ std::ostream& operator<<(std::ostream& outstream, const class Cart& cart){
 		auto item = cart.items.map.find(iter->first);
 		outstream << *(item->second) << "\tQuantity:" << iter->second << "\n";
 	}
+	outstream << "\t\t\t total: " << cart.total() << "\n";
 	return outstream;
 }
 
@@ -338,18 +348,64 @@ Cart& input_goods(Cart& cart){
 			std::cerr << e << std::endl;
 		}catch(std::exception& e){
 			std::cerr << "UCCU." << std::endl;
-			continue;
 		}
 	}
 	return cart;
 }
 
+float pay_cash(float total){
+	std::string token;
+	float give;
+	float pay;
+	while(true){
+		std::cout << "give me some money\n";
+		std::cin >> token;
+		try{
+			give = std::stof(token);
+			if (give <= 0)
+				throw "are you kidding !?";
+			std::cout << "good, and how much would you pay with cash?\n";
+			std::cin >> token;
+			pay = std::stof(token);
+			if (pay < give)
+				throw "that's funny.";
+			pay = fmin(pay, total);
+			std::cout << "receive " << give << "$\tpay " << pay << "\n changes: " << give - pay << "$\n";
+			return pay;
+		}catch(char const* e){
+			std::cerr << e << std::endl;
+		}catch(std::exception& e){
+			std::cerr << "UCCU." << std::endl;
+		}
+	}
+}
+
+float pay_credit(float total){
+	return 0;
+}
+
 void pay(Cart& cart){
-	while (true){
+	std::string token;
+	int choice;
+	float total = cart.total();
+	while (total > 0){
 		std::cout << "=======================================================================\n"
 					 "0 for pay with cash\t 1 for credit card \t 2 for shopping card\n"
 					 "=======================================================================\n";
-		
+		std::cin >> token;
+		try{
+			choice = std::stoi(token);
+			switch(choice){
+				case 0:
+					total -= pay_cash(total);
+					break;
+				case 1:
+					total -= pay_credit(total);
+					break;
+			}
+		}catch(std::exception& e){
+			std::cerr << "should input a number" << std::endl;
+		}
 	}
 }
 
