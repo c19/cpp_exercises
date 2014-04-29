@@ -5,7 +5,7 @@
 #include <iterator>
 #include <vector>
 #include <exception>
-#include "main.hpp"
+// #include "main.h"
 // =========================================
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
@@ -34,6 +34,8 @@ std::ostream& operator<<(std::ostream& outstream, std::vector<std::string>& str_
 	return outstream;
 }
 
+std::ostream & operator <<( std::ostream &outstream, const class Item &item );
+
 /*
   Item()
 */
@@ -50,7 +52,7 @@ public:       // Trust programmer that these won't be set inappropriately
 			0,大饼卷大葱,山东,998
 		 */
 		auto attrs = split(line, ',');     // 编译器会知道这里auto应该是std::vector<std::string>的
-		std::cout << "parsed args: " << attrs << "\n";
+		// std::cout << "parsed args: " << attrs << "\n";
 		if (attrs.size() != 4){
 			throw "UCCU,你看看这嘛玩意:";   // 果断扔出错误，嘲讽用户。
 		}
@@ -71,18 +73,14 @@ public:       // Trust programmer that these won't be set inappropriately
 			std::cerr << "ERROR:" << e.what() << std::endl;
 			std::cerr << "data:" << line << std::endl;
 		}       // 使用try catch throw显得更加专业。【应该扩展为外部处理错误。】
+		std::cout << *this;
 	}
 	~Item(){
 		std::cout << "Item deleted.\n";
 	}
 };
 
-std::ostream& operator<<(std::ostream& outstream, const Item* item){
-	outstream << "id:" << item->id << " name:" << item->name << " origin:" << item->origin << " base_price:" << item->base_price << "\n";
-	return outstream;
-}
-
-std::ostream& operator<<(std::ostream& outstream, Item& item){
+std::ostream& operator<<(std::ostream& outstream, const Item& item){
 	outstream << "id:" << item.id << " name:" << item.name << " origin:" << item.origin << " base_price:" << item.base_price << "\n";
 	return outstream;
 }
