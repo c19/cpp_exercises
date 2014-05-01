@@ -363,25 +363,45 @@ float pay_cash(float total){
 		try{
 			give = std::stof(token);
 			if (give <= 0)
-				throw "are you kidding !?";
+				throw "are you kidding !?\n";
 			std::cout << "good, and how much would you pay with cash?\n";
 			std::cin >> token;
 			pay = std::stof(token);
-			if (pay < give)
-				throw "that's funny.";
+			pay = fmin(pay, give);
 			pay = fmin(pay, total);
-			std::cout << "receive " << give << "$\tpay " << pay << "\n changes: " << give - pay << "$\n";
+			std::cout << "receive $" << give << "\tpay $" << pay << "\n changes: $" << give - pay << "\n";
 			return pay;
 		}catch(char const* e){
 			std::cerr << e << std::endl;
 		}catch(std::exception& e){
-			std::cerr << "UCCU." << std::endl;
+			std::cerr << "UCCU. " << e.what() << std::endl;
 		}
 	}
 }
 
 float pay_credit(float total){
-	return 0;
+	std::string token;
+	float pay;
+	while (true){
+		std::cout << "how much would you pay with your credit card\n";
+		std::cin >> token;
+		try{
+			pay = std::stof(token);
+			pay = fmin(pay, total);
+			std::cout << "you paid " << pay << "$ with your credit card.\n";
+			return pay;
+		}catch(std::exception& e){
+			std::cerr << "UCCU. " << e.what() << std::endl;
+		}
+	}
+}
+
+float pay_shopping_card(float total){
+	std::string token;
+	float pay;
+	while (true){
+		std::cout << "how"
+	}
 }
 
 void pay(Cart& cart){
@@ -391,6 +411,7 @@ void pay(Cart& cart){
 	while (total > 0){
 		std::cout << "=======================================================================\n"
 					 "0 for pay with cash\t 1 for credit card \t 2 for shopping card\n"
+					 "total: " << total << "\n"
 					 "=======================================================================\n";
 		std::cin >> token;
 		try{
@@ -402,11 +423,18 @@ void pay(Cart& cart){
 				case 1:
 					total -= pay_credit(total);
 					break;
+				case 2:
+					total -= pay_shopping_card(total);
+					break;
 			}
 		}catch(std::exception& e){
 			std::cerr << "should input a number" << std::endl;
 		}
 	}
+	std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+				 "         You have paid all $" << cart.total() << "\n"
+				 "         Thank you. Bye.\n"
+				 "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n";
 }
 
 int main(int argc, char const *argv[])
@@ -422,10 +450,7 @@ int main(int argc, char const *argv[])
 	auto cart = init_cart(customers, products);
 	std::cout << input_goods(cart);
 	pay(cart);
-	std::string token;
-	while (std::cin >> token){
-		std::cout << token;
-	}
+	
 	return 0;
 
 }
