@@ -211,9 +211,19 @@ public:
 			throw e;
 		}
 	}
+	Card& pay(float amount){
+		if (balance < amount){
+			std::ostringstream msg;
+			msg << "卡内余额不足。余额：" << balance;
+			throw msg.str();
+		}else{
+			balance -= amount;
+			return *this;
+		}
+	}
 };
 std::ostream& operator<<(std::ostream& outstream, const class Card& card){
-	outstream << "id:" << card.id << "\tbalance:" << card.balance;
+	outstream << "id:" << card.id << "\tbalance:" << card.balance << "\n";
 	return outstream;
 }
 
@@ -235,6 +245,13 @@ public:
 			}catch(std::exception& e){
 
 			}
+		}
+	}
+	Card* find(std::string id){
+		if (map.count(id)){
+			return map[id];
+		}else{
+			throw "card id not found: " + id;
 		}
 	}
 };
@@ -353,20 +370,25 @@ Cart& input_goods(Cart& cart){
 	return cart;
 }
 
-float pay_cash(float total){
+float input_float(){
 	std::string token;
+	float pay;
+	std::cin >> token;
+	pay = std::stof(token);
+	if (pay < 0)
+		throw "are you kidding !?\n";
+	return pay;
+}
+
+float pay_cash(float total){
 	float give;
 	float pay;
 	while(true){
 		std::cout << "give me some money\n";
-		std::cin >> token;
 		try{
-			give = std::stof(token);
-			if (give <= 0)
-				throw "are you kidding !?\n";
+			give = input_float();
 			std::cout << "good, and how much would you pay with cash?\n";
-			std::cin >> token;
-			pay = std::stof(token);
+			pay = input_float();
 			pay = fmin(pay, give);
 			pay = fmin(pay, total);
 			std::cout << "receive $" << give << "\tpay $" << pay << "\n changes: $" << give - pay << "\n";
@@ -380,13 +402,12 @@ float pay_cash(float total){
 }
 
 float pay_credit(float total){
-	std::string token;
+	/* 我拒绝做如此愚蠢的步骤。:如以银行卡支付,用户应录入银行卡号、姓名、消费数额等信息。 */
 	float pay;
 	while (true){
-		std::cout << "how much would you pay with your credit card\n";
-		std::cin >> token;
+		std::cout << "how much would you pay with your credit card?\n";
 		try{
-			pay = std::stof(token);
+			pay = input_float();
 			pay = fmin(pay, total);
 			std::cout << "you paid " << pay << "$ with your credit card.\n";
 			return pay;
@@ -396,15 +417,32 @@ float pay_credit(float total){
 	}
 }
 
-float pay_shopping_card(float total){
+float pay_shopping_card(float total, Cards cards){
 	std::string token;
 	float pay;
+	Card* card;
 	while (true){
-		std::cout << "how"
+		std::cout << "how much would you pay with shopping card?\n";
+		try{
+			pay = input_float();
+			pay = fmin(pay, total);
+			std::cout << "what's the shopping card number?\n";
+			std::cin >> token;
+			card = cards.find(token);
+			std::cout << *card;
+			card->pay(pay);
+			return pay;
+		}catch(std::exception& e){
+			std::cerr << "UCCU." << e.what() << std::endl;
+		}catch(char const* e){
+			std::cerr << e << std::endl;
+		}catch(std::string msg){
+			std::cerr << msg << std::endl;
+		}
 	}
 }
 
-void pay(Cart& cart){
+void pay(Cart& cart, Cards& cards){
 	std::string token;
 	int choice;
 	float total = cart.total();
@@ -424,7 +462,7 @@ void pay(Cart& cart){
 					total -= pay_credit(total);
 					break;
 				case 2:
-					total -= pay_shopping_card(total);
+					total -= pay_shopping_card(total, cards);
 					break;
 			}
 		}catch(std::exception& e){
@@ -449,7 +487,7 @@ int main(int argc, char const *argv[])
 
 	auto cart = init_cart(customers, products);
 	std::cout << input_goods(cart);
-	pay(cart);
+	pay(cart, cards);
 	
 	return 0;
 
