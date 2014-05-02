@@ -297,6 +297,39 @@ public:
 		}
 		return _total;
 	}
+	Cart& input_goods(){
+		std::string token;
+		Item_ID id;
+		int quantity;
+		while (true){
+			std::cout << "======================================\n"
+						 "input goods id and quantity like this:\n"
+						 "240,1\n"
+						 "or just the id:\n"
+						 "240\n"
+						 "type exit or ok to exit\n"
+						 "======================================\n";
+			std::cin >> token;
+			try{
+				if (token == "exit" or token == "ok")
+					break;
+				auto attrs = split(token, ',');
+				if (attrs.size() == 1){
+					id = std::stoul(attrs[0]);
+					quantity = 1;
+				}else{
+					id = std::stoul(attrs[0]);
+					quantity = std::stoi(attrs[1]);
+				}
+				this->add(id, quantity);
+			}catch(char const* e){
+				std::cerr << e << std::endl;
+			}catch(std::exception& e){
+				std::cerr << "UCCU." << std::endl;
+			}
+		}
+		return *this;
+	}
 };
 std::ostream& operator<<(std::ostream& outstream, const class Cart& cart){
 	outstream << "Items in Cart:\n";
@@ -309,6 +342,117 @@ std::ostream& operator<<(std::ostream& outstream, const class Cart& cart){
 	return outstream;
 }
 
+
+class Cashier
+{
+public:
+	Cart& cart;
+	Cards& cards;
+	float total;
+	Cashier(Cart& cart, Cards& cards): cart(cart), cards(cards){
+		total = cart.total();
+	}
+	float input_float(){
+		std::string token;
+		float pay;
+		std::cin >> token;
+		pay = std::stof(token);
+		if (pay < 0)
+			throw "are you kidding !?\n";
+		return pay;
+	}
+	void pay(){
+		std::string token;
+		int choice;
+		// float total = cart.total();
+		while (total > 0){
+			std::cout << "=======================================================================\n"
+						 "0 for pay with cash\t 1 for credit card \t 2 for shopping card\n"
+						 "total: " << total << "\n"
+						 "=======================================================================\n";
+			std::cin >> token;
+			try{
+				choice = std::stoi(token);
+				switch(choice){
+					case 0:
+						total -= pay_cash();
+						break;
+					case 1:
+						total -= pay_credit();
+						break;
+					case 2:
+						total -= pay_shopping_card();
+						break;
+				}
+			}catch(std::exception& e){
+				std::cerr << "should input a number" << std::endl;
+			}
+		}
+		std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+					 "         You have paid all $" << cart.total() << "\n"
+					 "         Thank you. Bye.\n"
+					 "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n";
+	}
+	float pay_cash(){
+		float give;
+		float pay;
+		while(true){
+			std::cout << "give me some money\n";
+			try{
+				give = input_float();
+				std::cout << "good, and how much would you pay with cash?\n";
+				pay = input_float();
+				pay = fmin(pay, give);
+				pay = fmin(pay, total);
+				std::cout << "receive $" << give << "\tpay $" << pay << "\n changes: $" << give - pay << "\n";
+				return pay;
+			}catch(char const* e){
+				std::cerr << e << std::endl;
+			}catch(std::exception& e){
+				std::cerr << "UCCU. " << e.what() << std::endl;
+			}
+		}
+	}
+	float pay_credit(){
+		/* 我拒绝做如此愚蠢的步骤。:如以银行卡支付,用户应录入银行卡号、姓名、消费数额等信息。 */
+		float pay;
+		while (true){
+			std::cout << "how much would you pay with your credit card?\n";
+			try{
+				pay = input_float();
+				pay = fmin(pay, total);
+				std::cout << "you paid " << pay << "$ with your credit card.\n";
+				return pay;
+			}catch(std::exception& e){
+				std::cerr << "UCCU. " << e.what() << std::endl;
+			}
+		}
+	}
+	float pay_shopping_card(){
+		std::string token;
+		float pay;
+		Card* card;
+		while (true){
+			std::cout << "how much would you pay with shopping card?\n";
+			try{
+				pay = input_float();
+				pay = fmin(pay, total);
+				std::cout << "what's the shopping card number?\n";
+				std::cin >> token;
+				card = cards.find(token);
+				std::cout << *card;
+				card->pay(pay);
+				return pay;
+			}catch(std::exception& e){
+				std::cerr << "UCCU." << e.what() << std::endl;
+			}catch(char const* e){
+				std::cerr << e << std::endl;
+			}catch(std::string msg){
+				std::cerr << msg << std::endl;
+			}
+		}
+	}
+};
 
 Cart& init_cart(Customers& customers, Items& products){
 	bool valid_user = false;
@@ -336,145 +480,6 @@ Cart& init_cart(Customers& customers, Items& products){
 	throw "init_cart failed.\n";
 }
 
-Cart& input_goods(Cart& cart){
-	std::string token;
-	Item_ID id;
-	int quantity;
-	while (true){
-		std::cout << "======================================\n"
-					 "input goods id and quantity like this:\n"
-					 "240,1\n"
-					 "or just the id:\n"
-					 "240\n"
-					 "type exit or ok to exit\n"
-					 "======================================\n";
-		std::cin >> token;
-		try{
-			if (token == "exit" or token == "ok")
-				break;
-			auto attrs = split(token, ',');
-			if (attrs.size() == 1){
-				id = std::stoul(attrs[0]);
-				quantity = 1;
-			}else{
-				id = std::stoul(attrs[0]);
-				quantity = std::stoi(attrs[1]);
-			}
-			cart.add(id, quantity);
-		}catch(char const* e){
-			std::cerr << e << std::endl;
-		}catch(std::exception& e){
-			std::cerr << "UCCU." << std::endl;
-		}
-	}
-	return cart;
-}
-
-float input_float(){
-	std::string token;
-	float pay;
-	std::cin >> token;
-	pay = std::stof(token);
-	if (pay < 0)
-		throw "are you kidding !?\n";
-	return pay;
-}
-
-float pay_cash(float total){
-	float give;
-	float pay;
-	while(true){
-		std::cout << "give me some money\n";
-		try{
-			give = input_float();
-			std::cout << "good, and how much would you pay with cash?\n";
-			pay = input_float();
-			pay = fmin(pay, give);
-			pay = fmin(pay, total);
-			std::cout << "receive $" << give << "\tpay $" << pay << "\n changes: $" << give - pay << "\n";
-			return pay;
-		}catch(char const* e){
-			std::cerr << e << std::endl;
-		}catch(std::exception& e){
-			std::cerr << "UCCU. " << e.what() << std::endl;
-		}
-	}
-}
-
-float pay_credit(float total){
-	/* 我拒绝做如此愚蠢的步骤。:如以银行卡支付,用户应录入银行卡号、姓名、消费数额等信息。 */
-	float pay;
-	while (true){
-		std::cout << "how much would you pay with your credit card?\n";
-		try{
-			pay = input_float();
-			pay = fmin(pay, total);
-			std::cout << "you paid " << pay << "$ with your credit card.\n";
-			return pay;
-		}catch(std::exception& e){
-			std::cerr << "UCCU. " << e.what() << std::endl;
-		}
-	}
-}
-
-float pay_shopping_card(float total, Cards cards){
-	std::string token;
-	float pay;
-	Card* card;
-	while (true){
-		std::cout << "how much would you pay with shopping card?\n";
-		try{
-			pay = input_float();
-			pay = fmin(pay, total);
-			std::cout << "what's the shopping card number?\n";
-			std::cin >> token;
-			card = cards.find(token);
-			std::cout << *card;
-			card->pay(pay);
-			return pay;
-		}catch(std::exception& e){
-			std::cerr << "UCCU." << e.what() << std::endl;
-		}catch(char const* e){
-			std::cerr << e << std::endl;
-		}catch(std::string msg){
-			std::cerr << msg << std::endl;
-		}
-	}
-}
-
-void pay(Cart& cart, Cards& cards){
-	std::string token;
-	int choice;
-	float total = cart.total();
-	while (total > 0){
-		std::cout << "=======================================================================\n"
-					 "0 for pay with cash\t 1 for credit card \t 2 for shopping card\n"
-					 "total: " << total << "\n"
-					 "=======================================================================\n";
-		std::cin >> token;
-		try{
-			choice = std::stoi(token);
-			switch(choice){
-				case 0:
-					total -= pay_cash(total);
-					break;
-				case 1:
-					total -= pay_credit(total);
-					break;
-				case 2:
-					total -= pay_shopping_card(total, cards);
-					break;
-			}
-		}catch(std::exception& e){
-			std::cerr << "should input a number" << std::endl;
-		}
-	}
-	std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
-				 "         You have paid all $" << cart.total() << "\n"
-				 "         Thank you. Bye.\n"
-				 "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n";
-}
-
 int main(int argc, char const *argv[])
 {
 	// 测试数据改自施闻轩的。
@@ -486,8 +491,10 @@ int main(int argc, char const *argv[])
 	std::cout << cards.map.size() << " cards imported.\n";
 
 	auto cart = init_cart(customers, products);
-	std::cout << input_goods(cart);
-	pay(cart, cards);
+	std::cout << cart.input_goods();
+
+	auto cashier = Cashier(cart, cards);
+	cashier.pay();
 	
 	return 0;
 
