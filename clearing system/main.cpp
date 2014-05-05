@@ -36,6 +36,24 @@ std::ostream& operator<<(std::ostream& outstream, std::vector<std::string>& str_
 	return outstream;
 }
 
+std::ostream& operator<<(std::ostream& outstream, const std::vector<int>& int_vector){
+	outstream << "std::vector<int>: ";
+	for (auto& one: int_vector){
+		outstream << one << " ";
+	}
+	outstream << "\n";
+	return outstream;
+}
+
+std::ostream& operator<<(std::ostream& outstream, const std::vector<float>& float_vector){
+	outstream << "std::vector<float>: ";
+	for (auto& one: float_vector){
+		outstream << one << " ";
+	}
+	outstream << "\n";
+	return outstream;
+}
+
 std::ostream & operator<<(std::ostream&, const class Item&);
 
 typedef unsigned long Item_ID;
@@ -49,7 +67,7 @@ public:       // Trust programmer that these won't be set inappropriately
 
 	Item(std::string line){
 		/*  id,name,origin,price
-			0,大饼卷大葱,山东,998
+			0,大饼卷大葱,山东,998.8
 		 */
 		auto attrs = split(line, ',');     // 编译器会知道这里auto应该是std::vector<std::string>的
 		// std::cout << "parsed args: " << attrs << "\n";
@@ -269,8 +287,11 @@ typedef std::map<Item_ID, int> Cart_MAP;
 std::ostream& operator<<(std::ostream&, const class Cart&);
 class Cart
 {
+	float _total_no_dicount_ = 0;
+	float _total_ = 0;
 public:
-	const Customer& customer;
+	float _add_points_ = 0;
+	Customer& customer;
 	const Items& items;
 	Cart_MAP map;
 	Cart(Customer& customer, Items& items): customer(customer), items(items){
@@ -288,14 +309,23 @@ public:
 			map.erase(id);
 		return *this;
 	}
-	float total() const{
+	float total_no_discount(){
+		if (_total_no_dicount_)
+			return _total_no_dicount_;
 		float _total = 0;
-		for (Cart_MAP::const_iterator iter = map.begin(); iter != map.end(); ++iter)
+		for (Cart_MAP::iterator iter = map.begin(); iter != map.end(); ++iter)
 		{
 			auto item = *items.map.find(iter->first)->second;
 			_total += item.base_price*iter->second;
 		}
+		_total_no_dicount_ = _total;
 		return _total;
+	}
+	float total(){
+		if (_total_)
+			return _total_;
+		_total_ = discount(total_no_discount());
+		return _total_;
 	}
 	Cart& input_goods(){
 		std::string token;
@@ -304,9 +334,9 @@ public:
 		while (true){
 			std::cout << "======================================\n"
 						 "input goods id and quantity like this:\n"
-						 "240,1\n"
+						 "80,1\n"
 						 "or just the id:\n"
-						 "240\n"
+						 "80\n"
 						 "type exit or ok to exit\n"
 						 "======================================\n";
 			std::cin >> token;
@@ -330,15 +360,124 @@ public:
 		}
 		return *this;
 	}
+	class Discount{
+	public:
+		// int result = 0;
+		int lower = 0;
+		int upper = 0;
+		std::vector<int> range;
+		std::vector<float> multiplier;
+
+		// sadly C++ does not support nested functions. we use class instead.
+		Discount(std::vector<int> range, std::vector<float> multiplier): range(range), multiplier(multiplier){
+
+		};
+		class Between{
+		public:
+			int operator()(int total, int lower, int upper){
+				int result = 0;
+				if (total <= lower){
+					result = 0;
+				}else if (total < upper){
+					result = total - lower;
+				}else{
+					result = upper - lower;
+				}
+				return result;
+			}
+			int operator()(int total, int upper){
+				int result = 0;
+				if (total <= upper){
+					result = 0;
+				}else{
+					result = upper - total;
+				}
+				return result;
+			}
+		} between;
+		float calculate(int total){
+			float result = 0;
+			for (int i = 0; i < sizeof(range)/sizeof(int) + 1; ++i)
+			{
+				if (i == sizeof(range)/sizeof(int)){
+					result += between(total, upper)*multiplier[i];
+				}else{
+					lower = upper;
+					upper = range[i];
+					result += between(total, lower, upper)*multiplier[i];
+				}
+			}
+			return result;
+		}
+	};
+	float discount(int total) {
+		float discounted = 0;
+		float points = 0;
+		// sorry for the large chunck of code. more tide code results more pain in the ass.
+		static const int _range[] =	{2000, 5000};
+		static const float _multiplier[] = {1, 0.95, 0.9};
+		static const std::vector<int> range0(_range, _range + sizeof(_range)/sizeof(_range[0]));
+		static const std::vector<float> multiplier0(_multiplier, _multiplier + sizeof(_multiplier)/sizeof(_multiplier[0]));
+		static const int _range1[] =	{1000, 2000};
+		static const float _multiplier1[] = {0.95, 0.90, 0.85};
+		static const std::vector<int> range1(_range1, _range1 + sizeof(_range1)/sizeof(_range1[0]));
+		static const std::vector<float> multiplier1(_multiplier1, _multiplier1 + sizeof(_multiplier1)/sizeof(_multiplier1[0]));
+		static const int _range2[] =	{2000, 5000};
+		static const float _multiplier2[] = {1.2, 1.5, 1.8};
+		static const std::vector<int> range1_points(_range2, _range2 + sizeof(_range2)/sizeof(_range2[0]));
+		static const std::vector<float> multiplier1_points(_multiplier2, _multiplier2 + sizeof(_multiplier2)/sizeof(_multiplier2[0]));
+		static const int _range3[] =	{1000, 5000};
+		static const float _multiplier3[] = {1.5, 1.8, 2};
+		static const std::vector<int> range2_points(_range3, _range3 + sizeof(_range3)/sizeof(_range3[0]));
+		static const std::vector<float> multiplier2_points(_multiplier3, _multiplier3 + sizeof(_multiplier3)/sizeof(_multiplier3[0]));
+		auto discount0 = Discount(range0, multiplier0);
+		auto discount1 = Discount(range1, multiplier1);
+		auto discount1_points = Discount(range1_points, multiplier1_points);
+		auto discount2_points = Discount(range2_points, multiplier2_points);
+		// std::cout << customer;
+		switch(customer.level){
+			case 0:   // 普通会员
+				discounted = discount0.calculate(total);
+				points = total*0.5;
+				break;
+			case 1:   // 银卡会员
+				discounted = discount1.calculate(total);
+				points = discount1_points.calculate(total);
+				break;
+			case 2:   // 金卡会员
+				float result = 0;
+				for (auto& one: map){
+					Item_ID item_id = one.first;
+					auto quantity = one.second;
+					auto base_price = items.map.find(item_id)->second->base_price;
+					if (base_price <= 100){
+						result += base_price*quantity;
+					}else if (base_price <= 200){
+						result += base_price*quantity*0.95;
+					}else{
+						result += base_price*quantity*0.9;
+					}
+				}
+				discounted = result;
+				points = discount2_points.calculate(total);
+				break;
+		}
+		_add_points_ = points;
+		customer.points += points;
+		return discounted;
+	}
 };
-std::ostream& operator<<(std::ostream& outstream, const class Cart& cart){
+std::ostream& operator<<(std::ostream& outstream, class Cart& cart){
 	outstream << "Items in Cart:\n";
 	for (Cart_MAP::const_iterator iter = cart.map.begin(); iter != cart.map.end(); ++iter)
 	{
 		auto item = cart.items.map.find(iter->first);
 		outstream << *(item->second) << "\tQuantity:" << iter->second << "\n";
 	}
-	outstream << "\t\t\t total: " << cart.total() << "\n";
+	outstream << cart.customer << "\n";
+	outstream << "\t\t\t total before discount: " << cart.total_no_discount() << "\n";
+	outstream << "\t\t\t total after discount: " << cart.total() << "\n";
+	outstream << "\t\t\t get points: " << cart._add_points_ << "\n";
 	return outstream;
 }
 
@@ -350,6 +489,7 @@ public:
 	Cards& cards;
 	float total;
 	Cashier(Cart& cart, Cards& cards): cart(cart), cards(cards){
+		// std::cout << "cashier initing.\n";
 		total = cart.total();
 	}
 	float input_float(){
@@ -468,13 +608,12 @@ Cart& init_cart(Customers& customers, Items& products){
 			std::cerr << "id should be a unsigned long" << std::endl;
 			continue;
 		}
-		auto iter = customers.map.find(id);
-		if (iter == customers.map.end()){
-			std::cerr << "id:" << id << "not found\n";
-		}else{
-			auto customer = *iter->second;
-			auto cart = new Cart(customer, products);
+		if (customers.map.count(id)){
+			auto customer = customers.map[id];
+			auto cart = new Cart(*customer, products);
 			return *cart;
+		}else{
+			std::cerr << "id:" << id << "not found\n";
 		}
 	}
 	throw "init_cart failed.\n";
@@ -495,7 +634,6 @@ int main(int argc, char const *argv[])
 
 	auto cashier = Cashier(cart, cards);
 	cashier.pay();
-	
 	return 0;
 
 }
