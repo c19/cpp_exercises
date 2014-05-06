@@ -1,3 +1,8 @@
+/*
+   CPP Assignment
+   1352872 曹逸君 classone2010@gmail.com
+*/
+
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -667,5 +672,4 @@ int main(int argc, char const *argv[])
 		std::cerr << e << std::endl;
 	}
 	return 0;
-
 }
