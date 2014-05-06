@@ -97,7 +97,8 @@ public:       // Trust programmer that these won't be set inappropriately
 	}
 };
 std::ostream& operator<<(std::ostream& outstream, const Item& item){
-	outstream << "id:" << item.id << "\tname:" << item.name << "\torigin:" << item.origin << "\tbase_price:" << item.base_price; // << "\n";
+	// outstream << "id:" << item.id << "\tname:" << item.name << "\torigin:" << item.origin << "\tbase_price:" << item.base_price; // << "\n";
+	outstream << item.id << "," << item.name << "," << item.origin << "," << item.base_price << "\n";
 	return outstream;
 }
 
@@ -123,9 +124,8 @@ public:
 	}
 };
 std::ostream& operator<<(std::ostream &outstream, const Items &items){
-	for (Items_MAP::const_iterator iter=items.map.begin(); iter != items.map.end(); ++iter)
-	{
-		outstream << *(iter->second);
+	for (auto& one: items.map){
+		outstream << *(one.second);
 	}
 	return outstream;
 }
@@ -140,7 +140,7 @@ public:
 	std::string gender;
 	std::string phone;   // 以便兼容+86之类的格式。也省的转换
 	int level;
-	unsigned long points;
+	float points;
 	Customer();
 	Customer(std::string line){
 		/*  id,姓名、性别、联系电话、会员级别、积分
@@ -170,9 +170,19 @@ public:
 		}
 		// std::cout << *this;
 	}
+	Customer& add_points(float add_points){
+		points += add_points;
+		if (points > 50000){
+			level = 1;
+		}else if (points > 10000){
+			level = 2;
+		}
+		return *this;
+	}
 };
 std::ostream& operator<<(std::ostream& outstream, const Customer& customer){
-	outstream << "id:" << customer.id << "\tname:" << customer.name << "\tgender:" << customer.gender << "\tphone:" << customer.phone << "\tlevel:" << customer.level << "\tpoints:" << customer.points << "\n";
+	// outstream << "id:" << customer.id << "\tname:" << customer.name << "\tgender:" << customer.gender << "\tphone:" << customer.phone << "\tlevel:" << customer.level << "\tpoints:" << customer.points << "\n";
+	outstream << customer.id << "," << customer.name << "," << customer.gender << "," << customer.phone << "," << customer.level << "," << customer.points << "\n";
 	return outstream;
 }
 
@@ -196,11 +206,16 @@ public:
 			} // 捕获错误以免不良数据录入
 		}
 	}
+	void save_to(std::string filename){
+		std::ofstream outfile(filename);
+		if (not outfile.is_open())
+			throw "can't open file";
+		outfile << *this;
+	}
 };
 std::ostream& operator<<(std::ostream& outstream, const class Customers& customers){
-	for (Customers_MAP::const_iterator iter=customers.map.begin(); iter != customers.map.end(); ++iter)
-	{
-		outstream << *(iter->second);
+	for (auto& one: customers.map){
+		outstream << *(one.second);
 	}
 	return outstream;
 }
@@ -241,7 +256,8 @@ public:
 	}
 };
 std::ostream& operator<<(std::ostream& outstream, const class Card& card){
-	outstream << "id:" << card.id << "\tbalance:" << card.balance << "\n";
+	// outstream << "id:" << card.id << "\tbalance:" << card.balance << "\n";
+	outstream << card.id << "," << card.balance << "\n";
 	return outstream;
 }
 
@@ -272,11 +288,16 @@ public:
 			throw "card id not found: " + id;
 		}
 	}
+	void save_to(std::string filename){
+		std::ofstream outfile(filename);
+		if (not outfile.is_open())
+			throw "can't open file.";
+		outfile << *this;
+	}
 };
 std::ostream& operator<<(std::ostream& outstream, const class Cards& cards){
-	for (Cards_MAP::const_iterator iter = cards.map.begin(); iter != cards.map.end(); ++iter)
-	{
-		outstream << *(iter->second);
+	for (auto& one: cards.map){
+		outstream << *(one.second);
 	}
 	return outstream;
 }
@@ -463,7 +484,7 @@ public:
 				break;
 		}
 		_add_points_ = points;
-		customer.points += points;
+		customer.add_points(points);
 		return discounted;
 	}
 };
@@ -634,6 +655,17 @@ int main(int argc, char const *argv[])
 
 	auto cashier = Cashier(cart, cards);
 	cashier.pay();
+	try{
+		cards.save_to("cards.csv");
+	}catch(char const* e){
+		std::cerr << e << std::endl;
+	}
+	std::cout << customers;
+	try{
+		customers.save_to("customers.csv");
+	}catch(char const* e){
+		std::cerr << e << std::endl;
+	}
 	return 0;
 
 }
